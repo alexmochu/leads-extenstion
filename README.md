@@ -1,5 +1,7 @@
 # Kejani Leads Scraper - Chrome Side Panel Extension
 
+![Extension in action on LinkedIn](screenshot-1.png)
+
 > **A powerful, local-first Chrome extension for sales professionals to collect, enrich, and manage leads from social media platforms with AI-powered sales intelligence.**
 
 ---
