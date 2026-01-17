@@ -11,6 +11,9 @@ export const excelService = {
      * @returns {Promise<boolean>} True if file selected successfully.
      */
     connectFile: async () => {
+        if (!window.showOpenFilePicker) {
+            throw new Error('File System Access API not supported in this browser.');
+        }
         try {
             const [handle] = await window.showOpenFilePicker({
                 types: [
@@ -26,10 +29,11 @@ export const excelService = {
             excelService.fileHandle = handle;
             return true;
         } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error('Error selecting file:', error);
+            // Rethrow specific errors so UI can handle them
+            if (error.name === 'AbortError') {
+                return false; // User cancelled, no error needed
             }
-            return false;
+            throw error;
         }
     },
 
@@ -79,5 +83,36 @@ export const excelService = {
         const buffer = XLSX.write(newWorkbook, { bookType: 'xlsx', type: 'array' });
         await writable.write(buffer);
         await writable.close();
+    },
+
+    /**
+     * Fallback: Triggers a browser download for the provided leads.
+     * @param {Array<Object>} leads - Array of lead objects
+     */
+    download: (leads) => {
+        const worksheet = XLSX.utils.json_to_sheet(leads);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+
+        // Write to base64 string
+        const base64 = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
+
+        // Use Chrome Downloads API via Background Script
+        const url = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`;
+
+        chrome.runtime.sendMessage({
+            action: 'download',
+            url: url,
+            filename: 'kejani_leads.xlsx'
+        }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError);
+                throw new Error(chrome.runtime.lastError.message);
+            }
+            if (response && !response.success) {
+                console.error(response.error);
+                throw new Error(response.error);
+            }
+        });
     }
 };

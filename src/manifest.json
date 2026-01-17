@@ -7,10 +7,14 @@
         "default_title": "Kejani Leads Scraper",
         "default_popup": "index.html"
     },
+    "background": {
+        "service_worker": "background.js"
+    },
     "permissions": [
         "activeTab",
         "scripting",
-        "storage"
+        "storage",
+        "downloads"
     ],
     "host_permissions": [
         "https://*.linkedin.com/*",
