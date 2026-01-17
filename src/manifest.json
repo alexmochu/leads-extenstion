@@ -1,0 +1,13 @@
+{
+    "manifest_version": 3,
+    "name": "Kejani Leads",
+    "version": "1.0.1",
+    "action": {
+        "default_title": "Find Your Dream Leads with Our Solution",
+        "default_popup": "index.html",
+        "persistent": true
+    },
+    "permissions": [
+        "tabs"
+    ]
+}
