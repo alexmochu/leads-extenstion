@@ -1,6 +1,11 @@
 // Background Service Worker
 // Handles downloads to prevent popup closure from interrupting the process.
 
+// Open side panel when extension icon is clicked
+chrome.action.onClicked.addListener((tab) => {
+    chrome.sidePanel.open({ windowId: tab.windowId });
+});
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'download') {
         const { url, filename } = message;

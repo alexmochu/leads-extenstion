@@ -4,8 +4,10 @@
     "version": "1.1.0",
     "description": "Collect leads from social media and store them in your local Excel file.",
     "action": {
-        "default_title": "Kejani Leads Scraper",
-        "default_popup": "index.html"
+        "default_title": "Kejani Leads Scraper"
+    },
+    "side_panel": {
+        "default_path": "index.html"
     },
     "background": {
         "service_worker": "background.js"
@@ -15,7 +17,8 @@
         "scripting",
         "storage",
         "downloads",
-        "clipboardWrite"
+        "clipboardWrite",
+        "sidePanel"
     ],
     "host_permissions": [
         "https://*.linkedin.com/*",

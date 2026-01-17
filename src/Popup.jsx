@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     FileSpreadsheet, Download, Loader2, CheckCircle, AlertCircle, Save, X,
     Share2, ClipboardCopy, Mail, MessageCircle, Send, Twitter,
-    Copy, Tags, Users, Repeat
+    Copy, Tags, Users, Repeat, Trash2, List, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { excelService } from './services/excelService';
 import { getScrapper } from './scrappers';
@@ -24,12 +24,39 @@ const Popup = () => {
     // Options
     const [exportFormat, setExportFormat] = useState('xlsx'); // 'xlsx' | 'csv'
     const [showShareMenu, setShowShareMenu] = useState(false);
+    const [showLeadsList, setShowLeadsList] = useState(false);
 
+    // 1. Load Session from Storage on Mount
     useEffect(() => {
-        if (!window.showOpenFilePicker) {
-            setIsFileSystemSupported(false);
-        }
+        if (!window.showOpenFilePicker) setIsFileSystemSupported(false);
+
+        // Load persisted state
+        chrome.storage.local.get(['sessionLeads', 'campaignName', 'exportFormat'], (result) => {
+            if (result.sessionLeads) setSessionLeads(result.sessionLeads);
+            if (result.campaignName) setCampaignName(result.campaignName);
+            if (result.exportFormat) setExportFormat(result.exportFormat);
+        });
     }, []);
+
+    // 2. Auto-Save Session to Storage
+    useEffect(() => {
+        chrome.storage.local.set({
+            sessionLeads,
+            campaignName,
+            exportFormat
+        });
+    }, [sessionLeads, campaignName, exportFormat]);
+
+    const handleResetSession = () => {
+        if (confirm("Are you sure you want to clear all leads in this session? This cannot be undone.")) {
+            setSessionLeads([]);
+            setScrappedData(null);
+            setGeneratedIcebreaker('');
+            setIsDuplicate(false);
+            setStatus({ type: 'success', message: 'Session cleared.' });
+            // Storage will auto-update via useEffect
+        }
+    };
 
     const handleConnect = async () => {
         setStatus({ type: 'loading', message: 'Connecting...' });
@@ -234,9 +261,30 @@ const Popup = () => {
                         </>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            {/* Stats */}
+                            {/* Stats & Reset */}
                             <div className="flex justify-between items-center text-xs text-white/70 px-1">
-                                <span>Session Leads: <span className="text-white font-bold text-sm ml-1">{sessionLeads.length}</span></span>
+                                <div className="flex items-center gap-2">
+                                    <span>Session Leads: <span className="text-white font-bold text-sm ml-1">{sessionLeads.length}</span></span>
+                                    {sessionLeads.length > 0 && (
+                                        <>
+                                            <button
+                                                onClick={() => setShowLeadsList(!showLeadsList)}
+                                                className="text-blue-400 hover:text-blue-300 transition-colors p-1 hover:bg-white/5 rounded flex items-center gap-1"
+                                                title="View Leads List"
+                                            >
+                                                <List className="w-3 h-3" />
+                                                {showLeadsList ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
+                                            </button>
+                                            <button
+                                                onClick={handleResetSession}
+                                                className="text-red-400 hover:text-red-300 transition-colors p-1 hover:bg-white/5 rounded"
+                                                title="Clear Session"
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                                 {isConnected && <span className="text-green-400 font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Auto-Saving</span>}
                             </div>
 
@@ -282,6 +330,45 @@ const Popup = () => {
                         </div>
                     )}
                 </section>
+
+                {/* Leads List View */}
+                {showLeadsList && sessionLeads.length > 0 && (
+                    <section className="bg-white/10 backdrop-blur-md border border-white/5 rounded-2xl p-4 shadow-xl max-h-[300px] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-xs font-bold text-white/80 uppercase tracking-wider flex items-center gap-2">
+                                <List className="w-4 h-4" /> Collected Leads ({sessionLeads.length})
+                            </h3>
+                            <button onClick={() => setShowLeadsList(false)} className="text-white/40 hover:text-white">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            {sessionLeads.map((lead, index) => (
+                                <div key={index} className="bg-white/5 border border-white/10 rounded-xl p-3 hover:bg-white/10 transition-colors">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                                            {lead.name ? lead.name[0] : '?'}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="text-white font-semibold text-sm truncate">{lead.name || 'Unknown'}</h4>
+                                            <p className="text-xs text-gray-400 truncate">{lead.title || 'No Title'}</p>
+                                            {lead.company && <p className="text-xs text-gray-500 truncate">{lead.company}</p>}
+                                            {lead.tags && (
+                                                <div className="mt-1 flex flex-wrap gap-1">
+                                                    {lead.tags.split(', ').slice(0, 3).map(tag => (
+                                                        <span key={tag} className="text-[9px] bg-indigo-500/20 text-indigo-200 px-1.5 py-0.5 rounded border border-indigo-500/30">
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
 
                 {/* Scrape Button */}
                 <button
@@ -355,8 +442,8 @@ const Popup = () => {
                 {scrappedData && !showShareMenu && (
                     <div className="absolute top-[135px] left-0 w-full px-6 pointer-events-none z-20">
                         <div className={`animate-[fade-in-up_0.5s_ease-out] backdrop-blur-xl border p-4 rounded-2xl shadow-2xl pointer-events-auto transition-colors ${isDuplicate
-                                ? 'bg-red-950/90 border-red-500/30 shadow-red-900/20'
-                                : 'bg-gray-900/90 border-white/10'
+                            ? 'bg-red-950/90 border-red-500/30 shadow-red-900/20'
+                            : 'bg-gray-900/90 border-white/10'
                             }`}>
                             {/* Duplicate Warning */}
                             {isDuplicate && (
