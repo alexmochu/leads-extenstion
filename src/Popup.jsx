@@ -210,23 +210,23 @@ const Popup = () => {
     };
 
     return (
-        <div className="w-[360px] min-h-[550px] font-sans text-gray-800 bg-gray-900 relative overflow-hidden flex flex-col">
+        <div className="w-full h-screen font-sans text-gray-800 bg-gray-900 relative overflow-hidden flex flex-col">
             {/* Background Gradients */}
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 z-0"></div>
             <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-purple-500 rounded-full blur-[80px] opacity-20 animate-pulse z-0"></div>
 
-            <main className="relative z-10 p-6 flex flex-col h-full gap-5 flex-1">
+            <main className="relative z-10 p-4 sm:p-6 flex flex-col h-full gap-4 sm:gap-5 overflow-y-auto">
 
-                {/* Header */}
-                <header className="flex flex-col gap-4">
+                {/* Header - Sticky */}
+                <header className="flex-shrink-0 flex flex-col gap-3 sm:gap-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center shadow-lg border border-white/10">
-                                <FileSpreadsheet className="w-6 h-6 text-white" />
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center shadow-lg border border-white/10">
+                                <FileSpreadsheet className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-lg font-bold text-white tracking-tight">Kejani Leads</h1>
-                                <p className="text-[10px] text-white/50 uppercase tracking-widest font-semibold flex items-center gap-1">
+                                <h1 className="text-base sm:text-lg font-bold text-white tracking-tight">Kejani Leads</h1>
+                                <p className="text-[9px] sm:text-[10px] text-white/50 uppercase tracking-widest font-semibold flex items-center gap-1">
                                     {isFileSystemSupported ? 'Auto-Sync' : 'Manual Mode'}
                                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
                                 </p>
@@ -241,13 +241,13 @@ const Popup = () => {
                             value={campaignName}
                             onChange={(e) => setCampaignName(e.target.value)}
                             placeholder="Campaign Name (e.g. Q1 Sales)"
-                            className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:bg-white/10 focus:border-indigo-500/50 transition-all font-medium"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm text-white placeholder:text-white/20 focus:outline-none focus:bg-white/10 focus:border-indigo-500/50 transition-all font-medium"
                         />
                     </div>
                 </header>
 
                 {/* Storage / Format Section */}
-                <section className="bg-white/10 backdrop-blur-md border border-white/5 rounded-2xl p-4 shadow-xl transition-all hover:bg-white/15">
+                <section className="flex-shrink-0 bg-white/10 backdrop-blur-md border border-white/5 rounded-2xl p-3 sm:p-4 shadow-xl transition-all hover:bg-white/15">
 
                     {isFileSystemSupported && !isConnected ? (
                         <>
@@ -331,9 +331,9 @@ const Popup = () => {
                     )}
                 </section>
 
-                {/* Leads List View */}
+                {/* Leads List View - Scrollable */}
                 {showLeadsList && sessionLeads.length > 0 && (
-                    <section className="bg-white/10 backdrop-blur-md border border-white/5 rounded-2xl p-4 shadow-xl max-h-[300px] overflow-y-auto">
+                    <section className="flex-1 bg-white/10 backdrop-blur-md border border-white/5 rounded-2xl p-3 sm:p-4 shadow-xl overflow-y-auto min-h-0">
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="text-xs font-bold text-white/80 uppercase tracking-wider flex items-center gap-2">
                                 <List className="w-4 h-4" /> Collected Leads ({sessionLeads.length})
@@ -370,11 +370,11 @@ const Popup = () => {
                     </section>
                 )}
 
-                {/* Scrape Button */}
+                {/* Scrape Button - Sticky at bottom */}
                 <button
                     onClick={handleScrape}
                     disabled={isScrapping}
-                    className={`w-full relative py-4 px-6 rounded-2xl font-bold text-lg text-white shadow-2xl transition-all border border-white/10 ${isScrapping ? 'bg-indigo-600/50 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 active:scale-[0.98]'
+                    className={`flex-shrink-0 w-full relative py-3 sm:py-4 px-4 sm:px-6 rounded-2xl font-bold text-base sm:text-lg text-white shadow-2xl transition-all border border-white/10 ${isScrapping ? 'bg-indigo-600/50 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 active:scale-[0.98]'
                         }`}
                 >
                     <div className="flex items-center justify-center gap-3">
@@ -384,10 +384,10 @@ const Popup = () => {
 
                 {/* Social Share Menu (Expanded) */}
                 {showShareMenu && (
-                    <div className="animate-[fade-in-up_0.3s_ease-out] bg-white/10 backdrop-blur-md border border-white/5 rounded-2xl p-4 shadow-xl">
+                    <div className="flex-shrink-0 animate-[fade-in-up_0.3s_ease-out] bg-white/10 backdrop-blur-md border border-white/5 rounded-2xl p-3 sm:p-4 shadow-xl">
                         <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-xs font-bold text-white/60 uppercase tracking-wider">Share via App</h3>
-                            <button onClick={() => setShowShareMenu(false)} className="text-white/40 hover:text-white"><X className="w-4 h-4" /></button>
+                            <h3 className="text-[10px] sm:text-xs font-bold text-white/60 uppercase tracking-wider">Share via App</h3>
+                            <button onClick={() => setShowShareMenu(false)} className="text-white/40 hover:text-white"><X className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
                         </div>
                         <div className="grid grid-cols-5 gap-2">
                             <button onClick={() => handleSocialShare('email')} className="flex flex-col items-center gap-1 group">
@@ -424,8 +424,8 @@ const Popup = () => {
                     </div>
                 )}
 
-                {/* Status Bar */}
-                <div className={`mt-auto min-h-[40px] flex items-center gap-3 px-4 py-3 rounded-xl backdrop-blur-sm border transition-all ${status.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-200' :
+                {/* Status Bar - Sticky at bottom */}
+                <div className={`flex-shrink-0 min-h-[36px] sm:min-h-[40px] flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl backdrop-blur-sm border transition-all ${status.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-200' :
                     status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200' :
                         status.type === 'loading' ? 'bg-blue-500/10 border-blue-500/20 text-blue-200' :
                             status.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' :
