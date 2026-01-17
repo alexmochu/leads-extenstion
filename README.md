@@ -1,62 +1,73 @@
-# Kejani Leads Scrapper Extension
+# Kejani Leads Scraper Extension
 
-A Google Chrome Extension that collects lead information (URLs, names, contact details) from social media platforms (LinkedIn, X/Twitter, Facebook, TikTok) and stores them directly into a local Excel file.
+Kejani Leads is a powerful, local-first Chrome Extension designed for sales professionals. It scrapes lead information from social media (LinkedIn, X/Twitter, Facebook) and contact pages, enriching it with sales intelligence before saving it to your local files.
 
-## Features
+## 🚀 Key Features
 
-- **Local Storage**: Saves data directly to your computer's file system using the File System Access API. No external databases or API servers required.
+### 1. Data Collection & Storage
+- **Auto-Sync Mode**: Connects directly to a local `.xlsx` file. Scraped leads are appended instantly.
+- **Manual Mode (Fallback)**: If file access is blocked, leads are saved in memory. You can download the session as Excel or CSV later.
 - **Platform Support**:
-  - LinkedIn (Profiles)
-  - X (Twitter) (Profiles)
-  - Facebook (Profiles)
-  - Generic Contact Scrapper (Emails & Phone Numbers on any page)
-- **Security**: Runs entirely in your browser with strict permissions.
+  - **LinkedIn**: Name, Headline, Location, Profile URL.
+  - **X (Twitter)**: Handle, Bio, Website, Location.
+  - **Facebook**: User details.
+  - **Generic**: Extracts emails and phone numbers from any webpage.
 
-## Setup & Installation
+### 2. 🧠 Sales Intelligence Suite
+- **🚫 Duplicate Detection**: Instantly warns you if a prospect is already in your list (checks URL and Name match). Prevents accidental double-pitching.
+- **🏷️ Smart Tagging**: Automatically categorizes leads based on keywords (e.g., "Decision Maker", "Tech", "Recruiter", "Real Estate") found in their bio/headline.
+- **⚡ Instant Icebreakers**: Generates a personalized outreach snippet ("Hi [Name], I saw you're the [Title]...") ready to copy-paste.
+- **📂 Campaign Management**: Organize your leads by creating custom "Campaign" names (e.g., "Q1 Cold Outreach") for each session.
 
-Since this is a developer extension, you need to load it manually into Chrome.
+### 3. 📤 Sharing & Export
+- **Social Sharing**: One-click sharing of lead data via **WhatsApp**, **Telegram**, **Email**, or **X**.
+- **Flexible Formats**: Toggle between **Excel (.xlsx)** and **CSV** for your downloads.
+- **Clipboard Sync**: Instantly copy your captured leads as CSV text to paste into Google Sheets or CRMs.
 
-1.  **Build the Project**:
-    Ensure you have Node.js installed, then run:
+---
+
+## 🛠️ Setup & Installation
+
+1.  **Build the Extension**:
     ```bash
     npm install
     npm run build-extension
     ```
-    This will create a `dist/` folder containing the extension.
+    This creates a `dist/` folder.
 
 2.  **Load into Chrome**:
-    - Open Chrome and navigate to `chrome://extensions/`.
-    - Enable **Developer mode** (toggle in the top right).
+    - Go to `chrome://extensions/`.
+    - Turn on **Developer Mode** (top right).
     - Click **Load unpacked**.
-    - Select the `dist/` folder from your project directory.
+    - Select the `dist/` folder.
 
-## Usage
+---
 
-1.  **Prepare an Excel Sheet**:
-    - Create a blank Excel file (e.g., `leads.xlsx`) on your computer.
-    - Close the file (Excel cannot hold the file lock while the extension writes to it).
+## 📖 Usage Guide
 
-2.  **Connect the Extension**:
-    - Click the extension icon in Chrome to open the popup.
-    - Click **Connect Excel Sheet**.
-    - Grant the browser permission to "View and Save changes" to your file.
+### Mode 1: Auto-Sync (Recommended)
+1.  Open the extension popup.
+2.  Click **"Link Excel File"**.
+3.  Select an existing `.xlsx` file on your computer.
+4.  Navigate to a profile and click **"Scrape Page"**.
+5.  Leads are saved automatically to your file.
 
-3.  **Scrape Leads**:
-    - Navigate to a profile page (e.g., a LinkedIn user profile).
-    - Open the extension popup.
-    - Click **Scrape Current Page**.
-    - You should see a success message.
+### Mode 2: Manual / Share Mode
+*(Used when file access is denied or for quick sessions)*
+1.  Open the popup.
+2.  Enter a **Campaign Name** (optional).
+3.  Scrape your leads. They will be stored in the session counter.
+4.  **Save**: Click **Save** to download the file (Toggle CSV/Excel first).
+5.  **Share**: Click **Share** to send via Email/WhatsApp or Copy to Clipboard.
 
-4.  **View Data**:
-    - Open your Excel file to see the scraped data.
+### Sales Intelligence Tools
+- **Duplicate Warning**: If you see a **Red Card** after scraping, that lead is already in your list. The extension will NOT auto-save it to prevent clutter.
+- **Icebreakers**: After scraping, look at the bottom of the preview card. Click the message text to copy it.
 
-## Troubleshooting
+---
 
-- **"File not connected"**: You must reconnect the file every time you reopen the browser (browser security limitation).
-- **"Permission denied"**: Ensure the Excel file is CLOSED in other applications.
-- **Empty Scrape**: Social media sites change their layouts often. If scraping fails, the site DOM might have changed.
+## ❓ Troubleshooting
 
-## Development
-
-- **Run Dev Server**: `npm run dev`
-- **Build**: `npm run build`
+- **"File System API not supported"**: The extension will automatically switch to **Manual Mode**. You can still scrape and download files manually.
+- **"Permission Denied"**: Close the Excel file on your computer before connecting. Excel locks the file, preventing the extension from writing to it.
+- **"Share Failed"**: If the native share menu doesn't open, the extension will automatically copy the data to your clipboard as a fallback.

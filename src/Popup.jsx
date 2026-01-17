@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
     FileSpreadsheet, Download, Loader2, CheckCircle, AlertCircle, Save, X,
-    Share2, ClipboardCopy, Mail, MessageCircle, Send, Twitter
+    Share2, ClipboardCopy, Mail, MessageCircle, Send, Twitter,
+    Copy, Tags, Users, Repeat
 } from 'lucide-react';
 import { excelService } from './services/excelService';
 import { getScrapper } from './scrappers';
+import { generateTags, generateIcebreaker, checkDuplicate } from './utils/salesIntelligence';
 
 const Popup = () => {
     const [isConnected, setIsConnected] = useState(false);
@@ -13,6 +15,11 @@ const Popup = () => {
     const [scrappedData, setScrappedData] = useState(null);
     const [isFileSystemSupported, setIsFileSystemSupported] = useState(true);
     const [sessionLeads, setSessionLeads] = useState([]);
+
+    // Sales Intelligence State
+    const [campaignName, setCampaignName] = useState('General Outreach');
+    const [isDuplicate, setIsDuplicate] = useState(false);
+    const [generatedIcebreaker, setGeneratedIcebreaker] = useState('');
 
     // Options
     const [exportFormat, setExportFormat] = useState('xlsx'); // 'xlsx' | 'csv'
@@ -42,8 +49,10 @@ const Popup = () => {
 
     const handleScrape = async () => {
         setIsScrapping(true);
-        setStatus({ type: 'loading', message: 'Scrapping data...' });
+        setStatus({ type: 'loading', message: 'Scrapping & Analyzing...' });
         setScrappedData(null);
+        setIsDuplicate(false);
+        setGeneratedIcebreaker('');
         setShowShareMenu(false);
 
         try {
@@ -57,15 +66,45 @@ const Popup = () => {
                 func: scrapper,
             });
 
-            const data = results[0].result;
-            setScrappedData(data);
+            // Base Data
+            let data = results[0].result;
 
+            // 1. Smart Tagging
+            data.tags = generateTags(data);
+            data.campaign = campaignName;
+
+            // 2. Icebreaker
+            const icebreaker = generateIcebreaker(data);
+            setGeneratedIcebreaker(icebreaker);
+
+            // 3. Duplicate Detection
+            let existingData = [];
             if (isFileSystemSupported && isConnected) {
-                await excelService.addLead(data);
-                setStatus({ type: 'success', message: 'Saved to Excel!' });
+                // If connected to file, we should theoretically read it to check duplicates.
+                // NOTE: Reading large files every time might be slow.
+                // For now, we assume user just connected or we read minimally.
+                try {
+                    existingData = await excelService.readLeads();
+                } catch (e) { console.warn("Could not read for dedup", e); }
             } else {
-                setSessionLeads(prev => [...prev, data]);
-                setStatus({ type: 'success', message: 'Lead captured!' });
+                existingData = sessionLeads;
+            }
+
+            const isDup = checkDuplicate(data, existingData);
+            setIsDuplicate(isDup);
+            setScrappedData(data); // Show preview regardless
+
+            if (isDup) {
+                setStatus({ type: 'warning', message: 'Duplicate Lead Detected!' });
+                // We DO NOT auto-save if duplicate
+            } else {
+                if (isFileSystemSupported && isConnected) {
+                    await excelService.addLead(data);
+                    setStatus({ type: 'success', message: 'Saved to Excel!' });
+                } else {
+                    setSessionLeads(prev => [...prev, data]);
+                    setStatus({ type: 'success', message: 'Lead captured!' });
+                }
             }
 
         } catch (error) {
@@ -74,6 +113,12 @@ const Popup = () => {
         } finally {
             setIsScrapping(false);
         }
+    };
+
+    const handleCopyIcebreaker = () => {
+        if (!generatedIcebreaker) return;
+        navigator.clipboard.writeText(generatedIcebreaker);
+        setStatus({ type: 'success', message: 'Icebreaker copied!' });
     };
 
     const handleDownload = () => {
@@ -146,18 +191,31 @@ const Popup = () => {
             <main className="relative z-10 p-6 flex flex-col h-full gap-5 flex-1">
 
                 {/* Header */}
-                <header className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center shadow-lg border border-white/10">
-                            <FileSpreadsheet className="w-6 h-6 text-white" />
+                <header className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center shadow-lg border border-white/10">
+                                <FileSpreadsheet className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-lg font-bold text-white tracking-tight">Kejani Leads</h1>
+                                <p className="text-[10px] text-white/50 uppercase tracking-widest font-semibold flex items-center gap-1">
+                                    {isFileSystemSupported ? 'Auto-Sync' : 'Manual Mode'}
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-lg font-bold text-white tracking-tight">Kejani Leads</h1>
-                            <p className="text-[10px] text-white/50 uppercase tracking-widest font-semibold flex items-center gap-1">
-                                {isFileSystemSupported ? 'Auto-Sync' : 'Manual Mode'}
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                            </p>
-                        </div>
+                    </div>
+                    {/* Campaign Input */}
+                    <div className="relative group">
+                        <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-indigo-400 transition-colors" />
+                        <input
+                            type="text"
+                            value={campaignName}
+                            onChange={(e) => setCampaignName(e.target.value)}
+                            placeholder="Campaign Name (e.g. Q1 Sales)"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:bg-white/10 focus:border-indigo-500/50 transition-all font-medium"
+                        />
                     </div>
                 </header>
 
@@ -281,10 +339,10 @@ const Popup = () => {
 
                 {/* Status Bar */}
                 <div className={`mt-auto min-h-[40px] flex items-center gap-3 px-4 py-3 rounded-xl backdrop-blur-sm border transition-all ${status.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-200' :
-                        status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200' :
-                            status.type === 'loading' ? 'bg-blue-500/10 border-blue-500/20 text-blue-200' :
-                                status.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' :
-                                    'bg-white/5 border-white/5 text-white/40' // idle
+                    status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200' :
+                        status.type === 'loading' ? 'bg-blue-500/10 border-blue-500/20 text-blue-200' :
+                            status.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' :
+                                'bg-white/5 border-white/5 text-white/40' // idle
                     }`}>
                     {status.type === 'success' && <CheckCircle className="w-4 h-4 shrink-0 text-emerald-400" />}
                     {status.type === 'error' && <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />}
@@ -295,16 +353,52 @@ const Popup = () => {
 
                 {/* Scrapped Data Preview */}
                 {scrappedData && !showShareMenu && (
-                    <div className="absolute top-[80px] left-0 w-full px-6 pointer-events-none z-20">
-                        <div className="animate-[fade-in-up_0.5s_ease-out] bg-gray-900/90 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl flex items-start gap-4 pointer-events-auto">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
-                                {scrappedData.name ? scrappedData.name[0] : '?'}
+                    <div className="absolute top-[135px] left-0 w-full px-6 pointer-events-none z-20">
+                        <div className={`animate-[fade-in-up_0.5s_ease-out] backdrop-blur-xl border p-4 rounded-2xl shadow-2xl pointer-events-auto transition-colors ${isDuplicate
+                                ? 'bg-red-950/90 border-red-500/30 shadow-red-900/20'
+                                : 'bg-gray-900/90 border-white/10'
+                            }`}>
+                            {/* Duplicate Warning */}
+                            {isDuplicate && (
+                                <div className="flex items-center gap-2 text-red-300 text-xs font-bold uppercase tracking-wider mb-2 bg-red-500/10 py-1 px-2 rounded-lg w-fit">
+                                    <Repeat className="w-3 h-3" /> Duplicate Lead Detected
+                                </div>
+                            )}
+
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
+                                    {scrappedData.name ? scrappedData.name[0] : '?'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-white font-bold text-sm truncate">{scrappedData.name || 'Unknown'}</h4>
+                                    <p className="text-xs text-gray-400 truncate">{scrappedData.title || 'No Title'}</p>
+
+                                    {/* Smart Tags */}
+                                    {scrappedData.tags && (
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                            {scrappedData.tags.split(', ').map(tag => (
+                                                <span key={tag} className="flex items-center gap-1 text-[10px] bg-indigo-500/20 text-indigo-200 px-1.5 py-0.5 rounded border border-indigo-500/30 font-medium">
+                                                    <Tags className="w-2.5 h-2.5" /> {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <button onClick={() => setScrappedData(null)} className="text-white/20 hover:text-white"><X className="w-4 h-4" /></button>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="text-white font-bold text-sm truncate">{scrappedData.name || 'Unknown'}</h4>
-                                <p className="text-xs text-gray-400 truncate">{scrappedData.title || 'No Title'}</p>
+
+                            {/* Icebreaker Action */}
+                            <div className="mt-3 pt-3 border-t border-white/5">
+                                <p className="text-[10px] text-white/40 mb-1">Icebreaker (Ready to Send):</p>
+                                <button
+                                    onClick={handleCopyIcebreaker}
+                                    className="w-full text-left text-xs text-white/80 italic bg-black/20 hover:bg-black/40 p-2 rounded-lg transition-colors border border-dashed border-white/10 hover:border-white/30 group flex justify-between items-center"
+                                >
+                                    <span className="line-clamp-2">{generatedIcebreaker}</span>
+                                    <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-white/60" />
+                                </button>
                             </div>
-                            <button onClick={() => setScrappedData(null)} className="text-white/20 hover:text-white"><X className="w-4 h-4" /></button>
+
                         </div>
                     </div>
                 )}
