@@ -1,13 +1,30 @@
 {
     "manifest_version": 3,
-    "name": "Kejani Leads",
-    "version": "1.0.1",
+    "name": "Kejani Leads Scrapper",
+    "version": "1.1.0",
+    "description": "Collect leads from social media and store them in your local Excel file.",
     "action": {
-        "default_title": "Find Your Dream Leads with Our Solution",
-        "default_popup": "index.html",
-        "persistent": true
+        "default_title": "Kejani Leads Scraper",
+        "default_popup": "index.html"
     },
     "permissions": [
-        "tabs"
-    ]
+        "activeTab",
+        "scripting",
+        "storage"
+    ],
+    "host_permissions": [
+        "https://*.linkedin.com/*",
+        "https://*.twitter.com/*",
+        "https://*.x.com/*",
+        "https://*.facebook.com/*",
+        "https://*.tiktok.com/*"
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'none';"
+    },
+    "icons": {
+        "16": "logo.png",
+        "48": "logo.png",
+        "128": "logo.png"
+    }
 }
