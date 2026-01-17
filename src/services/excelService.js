@@ -114,5 +114,45 @@ export const excelService = {
                 throw new Error(response.error);
             }
         });
+    },
+
+    /**
+     * Attempts to share the leads file using the native OS share dialog.
+     * @param {Array<Object>} leads 
+     * @returns {Promise<boolean>} True if shared, False if not supported/cancelled.
+     */
+    share: async (leads) => {
+        try {
+            const worksheet = XLSX.utils.json_to_sheet(leads);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+            const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+            const file = new File([buffer], 'kejani_leads.xlsx', {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Kejani Leads',
+                    text: `Here are ${leads.length} captured leads.`
+                });
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Share failed:', error);
+            if (error.name === 'AbortError') return true;
+            return false;
+        }
+    },
+
+    /**
+     * Helper to get CSV text for clipboard copying.
+     */
+    getCSV: (leads) => {
+        const worksheet = XLSX.utils.json_to_sheet(leads);
+        return XLSX.utils.sheet_to_csv(worksheet);
     }
 };

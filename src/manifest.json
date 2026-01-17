@@ -14,7 +14,8 @@
         "activeTab",
         "scripting",
         "storage",
-        "downloads"
+        "downloads",
+        "clipboardWrite"
     ],
     "host_permissions": [
         "https://*.linkedin.com/*",

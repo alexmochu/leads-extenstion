@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileSpreadsheet, Download, Loader2, CheckCircle, AlertCircle, Save, X } from 'lucide-react';
+import { FileSpreadsheet, Download, Loader2, CheckCircle, AlertCircle, Save, X, Share2, ClipboardCopy } from 'lucide-react';
 import { excelService } from './services/excelService';
 import { getScrapper } from './scrappers';
 
@@ -79,6 +79,31 @@ const Popup = () => {
         }
     };
 
+    const handleShare = async () => {
+        if (sessionLeads.length === 0) return;
+        setStatus({ type: 'loading', message: 'Preparing share...' });
+
+        try {
+            const shared = await excelService.share(sessionLeads);
+            if (shared) {
+                setStatus({ type: 'success', message: 'Shared successfully!' });
+            } else {
+                // Fallback to clipboard
+                try {
+                    const csv = excelService.getCSV(sessionLeads);
+                    await navigator.clipboard.writeText(csv);
+                    setStatus({ type: 'warning', message: 'Copied to clipboard (Share unsupported)' });
+                } catch (clipboardError) {
+                    console.error('Clipboard failed:', clipboardError);
+                    setStatus({ type: 'error', message: `Copy failed: ${clipboardError.message}` });
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            setStatus({ type: 'error', message: `Error: ${error.message}` });
+        }
+    };
+
     return (
         <div className="w-[360px] min-h-[500px] font-sans text-gray-800 bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 relative overflow-hidden">
             {/* Background Orbs */}
@@ -144,12 +169,23 @@ const Popup = () => {
                                 onClick={handleDownload}
                                 disabled={sessionLeads.length === 0}
                                 className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold transition-all shadow-lg ${sessionLeads.length > 0
-                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-emerald-500/25 active:scale-[0.98] cursor-pointer'
-                                        : 'bg-white/5 text-white/20 cursor-not-allowed'
+                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-emerald-500/25 active:scale-[0.98] cursor-pointer'
+                                    : 'bg-white/5 text-white/20 cursor-not-allowed'
                                     }`}
                             >
                                 <Save className="w-4 h-4" />
                                 Download Leads
+                            </button>
+                            <button
+                                onClick={handleShare}
+                                disabled={sessionLeads.length === 0}
+                                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold transition-all shadow-lg border border-white/10 ${sessionLeads.length > 0
+                                    ? 'bg-blue-600/80 text-white hover:bg-blue-500 hover:shadow-blue-500/25 active:scale-[0.98] cursor-pointer'
+                                    : 'bg-white/5 text-white/20 cursor-not-allowed'
+                                    }`}
+                            >
+                                <Share2 className="w-4 h-4" />
+                                Share / Copy
                             </button>
                         </div>
                     )}
@@ -160,8 +196,8 @@ const Popup = () => {
                     onClick={handleScrape}
                     disabled={isScrapping}
                     className={`w-full relative py-4 px-6 rounded-2xl font-bold text-lg text-white shadow-2xl transition-all border border-white/10 ${isScrapping
-                            ? 'bg-indigo-600/50 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-blue-500/25 active:scale-[0.98]'
+                        ? 'bg-indigo-600/50 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-blue-500/25 active:scale-[0.98]'
                         }`}
                 >
                     <div className="flex items-center justify-center gap-3">
@@ -181,9 +217,9 @@ const Popup = () => {
 
                 {/* Status Bar */}
                 <div className={`mt-auto min-h-[40px] flex items-center gap-3 px-4 py-3 rounded-xl backdrop-blur-sm border transition-all duration-300 ${status.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-200' :
-                        status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200' :
-                            status.type === 'loading' ? 'bg-blue-500/10 border-blue-500/20 text-blue-200' :
-                                'bg-white/5 border-white/5 text-white/40' // idle
+                    status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200' :
+                        status.type === 'loading' ? 'bg-blue-500/10 border-blue-500/20 text-blue-200' :
+                            'bg-white/5 border-white/5 text-white/40' // idle
                     }`}>
                     {status.type === 'success' && <CheckCircle className="w-4 h-4 shrink-0 text-emerald-400" />}
                     {status.type === 'error' && <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />}
