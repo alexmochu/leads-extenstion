@@ -89,21 +89,48 @@ export const excelService = {
      * Fallback: Triggers a browser download for the provided leads.
      * @param {Array<Object>} leads - Array of lead objects
      */
-    download: (leads) => {
+    /**
+     * Fallback: Triggers a browser download for the provided leads.
+     * @param {Array<Object>} leads - Array of lead objects
+     * @param {string} format - 'xlsx' or 'csv'
+     */
+    download: (leads, format = 'xlsx') => {
         const worksheet = XLSX.utils.json_to_sheet(leads);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
 
+        let url;
+        let filename;
+
+        if (format === 'csv') {
+            const csv = XLSX.utils.sheet_to_csv(worksheet);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            // Create a blob URL for CSV (simpler than base64)
+            url = URL.createObjectURL(blob);
+            filename = 'kejani_leads.csv';
+
+            // For Blob URLs we can use standard download or chrome.downloads. For consistency let's use chrome.downloads
+            // But chrome.downloads expects a URL. Blob URL works.
+            chrome.runtime.sendMessage({
+                action: 'download',
+                url: url,
+                filename: filename
+            });
+            return;
+        }
+
+        // Default to XLSX
         // Write to base64 string
         const base64 = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
 
         // Use Chrome Downloads API via Background Script
-        const url = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`;
+        url = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`;
+        filename = 'kejani_leads.xlsx';
 
         chrome.runtime.sendMessage({
             action: 'download',
             url: url,
-            filename: 'kejani_leads.xlsx'
+            filename: filename
         }, (response) => {
             if (chrome.runtime.lastError) {
                 console.error(chrome.runtime.lastError);
